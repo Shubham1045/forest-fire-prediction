@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Forest Fire Risk Prediction</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Poppins', sans-serif;
+}
+
+body {
+    background: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url("{{ url_for('static', filename='pexels-pixabay-51951.jpg') }}") no-repeat center center/cover;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 15px;
+    transition: background 0.5s ease;
+}
+
+body.safe-background {
+    background: linear-gradient(rgba(76, 175, 80, 0.8), rgba(76, 175, 80, 0.8)), url("{{ url_for('static', filename='pexels-pixabay-51951.jpg') }}") no-repeat center center/cover;
+}
+
+.container {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border-radius: 15px;
+    padding: 25px;
+    width: 100%;
+    max-width: 420px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    overflow: hidden;
+    position: relative;
+}
+
+.container::before {
+    content: "";
+    position: absolute;
+    width: 120px;
+    height: 120px;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0) 70%);
+    top: -60px;
+    right: -60px;
+    border-radius: 50%;
+}
+
+h1 {
+    color: white;
+    text-align: center;
+    margin-bottom: 20px;
+    font-weight: 600;
+    font-size: 22px;
+    text-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+    position: relative;
+}
+
+h1::after {
+    content: "";
+    position: absolute;
+    width: 50px;
+    height: 3px;
+    background: #ff5733;
+    bottom: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-radius: 10px;
+}
+
+.input-group {
+    margin-bottom: 10px;
+    position: relative;
+}
+
+.input-group label {
+    display: block;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 11px;
+    margin-bottom: 3px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+input {
+    width: 100%;
+    padding: 10px;
+    border: none;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    font-size: 14px;
+    color: white;
+    transition: all 0.3s;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+input:focus {
+    outline: none;
+    background: rgba(255, 255, 255, 0.2);
+    box-shadow: 0 0 0 2px rgba(255, 87, 51, 0.5);
+}
+
+input::placeholder {
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.form-row {
+    display: flex;
+    gap: 10px;
+}
+
+.form-row .input-group {
+    flex: 1;
+}
+
+.btn-container {
+    text-align: center;
+    margin-top: 20px;
+}
+
+button {
+    background: linear-gradient(to right, #ff5733, #ff8a65);
+    color: white;
+    padding: 10px 25px;
+    border: none;
+    border-radius: 50px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: 1px;
+    box-shadow: 0 8px 15px rgba(255, 87, 51, 0.3);
+    transition: all 0.3s;
+    text-transform: uppercase;
+}
+
+button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 20px rgba(255, 87, 51, 0.4);
+}
+
+button:active {
+    transform: translateY(1px);
+}
+
+.results-container {
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+h2 {
+    color: white;
+    text-align: center;
+    font-weight: 500;
+    font-size: 16px;
+    margin-bottom: 15px;
+}
+
+.risk-level {
+    font-size: 16px;
+    font-weight: 600;
+    text-align: center;
+    padding: 10px 15px;
+    border-radius: 50px;
+    display: inline-block;
+    margin: 5px auto;
+    min-width: 180px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    position: relative;
+    overflow: hidden;
+}
+
+.risk-level::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(45deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0) 100%);
+}
+
+.safe {
+    background: linear-gradient(to right, #43a047, #66bb6a);
+}
+
+.moderate {
+    background: linear-gradient(to right, #ffb300, #ffd54f);
+    color: #333;
+}
+
+.high {
+    background: linear-gradient(to right, #fb8c00, #ffb74d);
+}
+
+.very-high {
+    background: linear-gradient(to right, #f4511e, #ff8a65);
+}
+
+.extreme {
+    background: linear-gradient(to right, #d32f2f, #ef5350);
+    animation: pulse 1.5s infinite;
+}
+
+.warning {
+    margin-top: 15px;
+    padding: 12px;
+    border-radius: 8px;
+    font-weight: 500;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    font-size: 13px;
+}
+
+.warning::before {
+    content: "⚠️";
+    font-size: 20px;
+    display: block;
+    margin-bottom: 8px;
+}
+
+.safe-message {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    pointer-events: none;
+    z-index: -1;
+}
+
+.safe-text {
+    font-size: 100px;
+    font-weight: 800;
+    color: rgba(255, 255, 255, 0.9);
+    text-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+    animation: float 3s ease-in-out infinite;
+    transform-origin: center;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.7; }
+    100% { opacity: 1; }
+}
+
+@keyframes float {
+    0% { transform: scale(1) rotate(-5deg); }
+    50% { transform: scale(1.05) rotate(5deg); }
+    100% { transform: scale(1) rotate(-5deg); }
+}
+
+.info-label {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    font-size: 10px;
+    margin-left: 4px;
+    cursor: help;
+    position: relative;
+}
+
+.info-label:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 6px 10px;
+    border-radius: 4px;
+    font-size: 11px;
+    white-space: nowrap;
+    z-index: 10;
+    margin-bottom: 5px;
+}
+
+.info-label:hover::before {
+    content: "";
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 4px solid transparent;
+    border-top-color: rgba(0, 0, 0, 0.8);
+    margin-bottom: -4px;
+}
+
+.error {
+    background: linear-gradient(to right, #d32f2f, #ef5350);
+    color: white;
+    padding: 12px;
+    border-radius: 8px;
+    margin-top: 15px;
+    text-align: center;
+    animation: shake 0.5s linear;
+    font-size: 13px;
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+    20%, 40%, 60%, 80% { transform: translateX(5px); }
+}
+</style>
+</head>
+<body {% if results is defined and risk_level == 'Safe' %}class="safe-background"{% endif %}>
+
+{% if results is defined and risk_level == 'Safe' %}
+<div class="safe-message">
+    <div class="safe-text">SAFE!!!</div>
+</div>
+{% endif %}
+
+<div class="container">
+    <h1>Forest Fire Risk Prediction</h1>
+    <form action="{{ url_for('predict_datapoint') }}" method="post">
+        <div class="form-row">
+            <div class="input-group">
+                <label>Temperature <span class="info-label" data-tooltip="Air temperature in Celsius">i</span></label>
+                <input type="text" name="Temperature" placeholder="°C" required />
+            </div>
+            <div class="input-group">
+                <label>RH <span class="info-label" data-tooltip="Relative humidity in %">i</span></label>
+                <input type="text" name="RH" placeholder="%" required />
+            </div>
+        </div>
+        
+        <div class="form-row">
+            <div class="input-group">
+                <label>Wind Speed <span class="info-label" data-tooltip="Wind speed in km/h">i</span></label>
+                <input type="text" name="Ws" placeholder="km/h" required />
+            </div>
+            <div class="input-group">
+                <label>Rain <span class="info-label" data-tooltip="Rain amount in mm/m²">i</span></label>
+                <input type="text" name="Rain" placeholder="mm/m²" required />
+            </div>
+        </div>
+        
+        <div class="form-row">
+            <div class="input-group">
+                <label>FFMC <span class="info-label" data-tooltip="Fine Fuel Moisture Code">i</span></label>
+                <input type="text" name="FFMC" placeholder="FFMC index" required />
+            </div>
+            <div class="input-group">
+                <label>DMC <span class="info-label" data-tooltip="Duff Moisture Code">i</span></label>
+                <input type="text" name="DMC" placeholder="DMC index" required />
+            </div>
+        </div>
+        
+        <div class="form-row">
+            <div class="input-group">
+                <label>ISI <span class="info-label" data-tooltip="Initial Spread Index">i</span></label>
+                <input type="text" name="ISI" placeholder="ISI index" required />
+            </div>
+            <div class="input-group">
+                <label>Classes <span class="info-label" data-tooltip="Fire danger classes">i</span></label>
+                <input type="text" name="Classes" placeholder="Class value" required />
+            </div>
+        </div>
+        
+        <div class="input-group">
+            <label>Region <span class="info-label" data-tooltip="Geographic region code">i</span></label>
+            <input type="text" name="Region" placeholder="Region code" required />
+        </div>
+        
+        <div class="btn-container">
+            <button type="submit">Predict Risk</button>
+        </div>
+    </form>
+    
+    {% if results is defined %}
+    <div class="results-container">
+        <h2>FWI Prediction: {{ results|round(2) }}</h2>
+        
+        {% if risk_level %}
+        <div style="text-align: center;">
+            <div class="risk-level {{ risk_level|lower|replace(' ', '-') }}">
+                Risk Level: {{ risk_level }}
+            </div>
+        </div>
+        {% endif %}
+        
+        {% if fire_warning %}
+        <div class="warning" style="background-color: {% if risk_level == 'High' %}#fb8c00{% elif risk_level == 'Very High' %}#f4511e{% else %}#d32f2f{% endif %}">
+            {{ fire_warning }}
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+    
+    {% if error %}
+    <div class="error">
+        {{ error }}
+    </div>
+    {% endif %}
+</div>
+</body>
+</html>
